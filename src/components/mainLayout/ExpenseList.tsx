@@ -31,6 +31,12 @@ const ExpensesList: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [currentYear, setCurrentYear] = useState<string>(new Date().getFullYear().toString());
   const [currentMonth, setCurrentMonth] = useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'));
+  const [filters, setFilters] = useState({
+    searchTerm: "",
+    type: "",
+    category: "",
+    currency: "",
+  });
 
   const fetchAndGroupExpenses = useCallback(async (month: string, year: string) => {
     setLoading(true);
@@ -76,6 +82,26 @@ const ExpensesList: React.FC = () => {
     setCurrentYear(newYear);
   };
 
+  const handleFilterChange = (name: string, value: string) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [name]: value,
+    }));
+  };
+
+  const filteredGroupedExpenses = groupedExpenses
+    .map(group => ({
+      ...group,
+      expenses: group.expenses.filter(expense =>
+        expense.note.toLowerCase().includes(filters.searchTerm.toLowerCase()) &&
+        (filters.type ? expense.type === filters.type : true) &&
+        (filters.category ? expense.category === filters.category : true) &&
+        (filters.currency ? expense.currency === filters.currency : true)
+      ),
+    }))
+    .filter(group => group.expenses.length > 0) // Keep only non-empty groups
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Sort by date
+
   return (
     <div className="m-3">
       <div className="flex m-auto flex-col gap-2">
@@ -85,13 +111,13 @@ const ExpensesList: React.FC = () => {
           onPrevious={handlePreviousMonth}
           onNext={handleNextMonth}
         />
-        <ExpenseFilter />
+        <ExpenseFilter filters={filters} onFilterChange={handleFilterChange} />
         {error && <p>Error: {error}</p>}
         {loading && <p>Loading...</p>}
         <div className="mainData w-full">
-          {groupedExpenses.length === 0
+          {filteredGroupedExpenses.length === 0
             ? !loading && <p>No expenses found.</p>
-            : groupedExpenses.map(({ date, expenses }) => (
+            : filteredGroupedExpenses.map(({ date, expenses }) => (
                 <div key={date} className="w-full flex flex-col items-center justify-between bg-black/10 dark:bg-white/10 rounded-lg text-sm my-3">
                   <div className="w-full flex items-center justify-between font-bold px-4 py-2">
                     <div className="w-full flex items-center gap-2">

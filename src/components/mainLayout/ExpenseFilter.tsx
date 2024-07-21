@@ -5,54 +5,82 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 const categories = ["Healthcare", "Shopping", "Travel", "Investment", "Entertainment", "Food", "Education", "Transportation", "Rent", "Utilities", "Bonus", "Freelance", "Gift", "Salary"];
 const currencies = ["EUR", "JPY", "USD", "INR", "GBP"];
 
-const ExpenseFilter: React.FC = () => (
-  <div className="filterSection w-full flex flex-row xs:flex-col gap-2">
-    <div className="flex w-full flex-row gap-3">
-      <Input placeholder="Search" className="h-8" />
-    </div>
-    <div className="flex w-full gap-3">
-      <Select>
-        <SelectTrigger className="w-[120px] xs:w-full h-8">
-          <SelectValue placeholder="Type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectLabel>Type</SelectLabel>
-            <SelectItem value="Expense">Expense</SelectItem>
-            <SelectItem value="Income">Income</SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+interface FilterProps {
+  filters: {
+    searchTerm: string;
+    type: string;
+    category: string;
+    currency: string;
+  };
+  onFilterChange: (name: string, value: string) => void;
+}
 
-      <Select>
-        <SelectTrigger className="w-[120px] xs:w-full h-8">
-          <SelectValue placeholder="Category" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectLabel>Category</SelectLabel>
-            {categories.map(category => (
-              <SelectItem key={category} value={category}>{category}</SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+const ExpenseFilter: React.FC<FilterProps> = ({ filters, onFilterChange }) => {
+  const handleValueChange = (name: string) => (value: string) => {
+    if (value === "All") {
+      onFilterChange(name, "");
+    } else {
+      onFilterChange(name, value);
+    }
+  };
 
-      <Select>
-        <SelectTrigger className="w-[120px] xs:w-full h-8">
-          <SelectValue placeholder="Currency" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectLabel>Currency</SelectLabel>
-            {currencies.map(currency => (
-              <SelectItem key={currency} value={currency}>{currency}</SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+  return (
+    <div className="filterSection w-full flex flex-row xs:flex-col gap-2">
+      <div className="flex w-full flex-row gap-3">
+        <Input
+          placeholder="Search"
+          className="h-8"
+          value={filters.searchTerm}
+          onChange={(e) => onFilterChange('searchTerm', e.target.value)}
+        />
+      </div>
+      <div className="flex w-full gap-3">
+        <Select value={filters.type} onValueChange={handleValueChange('type')}>
+          <SelectTrigger className="w-[120px] xs:w-full h-8">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Type</SelectLabel>
+              <SelectItem value="All">All</SelectItem>
+              <SelectItem value="Expense">Expense</SelectItem>
+              <SelectItem value="Income">Income</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <Select value={filters.category} onValueChange={handleValueChange('category')}>
+          <SelectTrigger className="w-[120px] xs:w-full h-8">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Category</SelectLabel>
+              <SelectItem value="All">All</SelectItem>
+              {categories.map(category => (
+                <SelectItem key={category} value={category}>{category}</SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <Select value={filters.currency} onValueChange={handleValueChange('currency')}>
+          <SelectTrigger className="w-[120px] xs:w-full h-8">
+            <SelectValue placeholder="Currency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Currency</SelectLabel>
+              <SelectItem value="All">All</SelectItem>
+              {currencies.map(currency => (
+                <SelectItem key={currency} value={currency}>{currency}</SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default ExpenseFilter;
