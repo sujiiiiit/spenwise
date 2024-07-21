@@ -9,6 +9,10 @@ module.exports = {
   ],
   prefix: "",
   theme: {
+    fontFamily: {
+      Geist: ['"Geist"', "sans-serif"],
+      GeistMono: ['"GeistMono"', "sans-serif"],
+    },
     container: {
       center: true,
       padding: "2rem",
@@ -18,6 +22,7 @@ module.exports = {
     },
     extend: {
       colors: {
+      
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -65,6 +70,14 @@ module.exports = {
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
+        },
+      },
+      screens: {
+        xs: {
+          raw: "(max-width: 600px)",
+        },
+        mdd: {
+          raw: "(max-width: 890px)",
         },
       },
       animation: {
