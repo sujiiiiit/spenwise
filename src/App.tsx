@@ -4,7 +4,7 @@ function App() {
   return (
     <>
       <Header />
-      <div className="w-full max-w-screen-sm">
+      <div className="w-full max-w-screen-sm m-auto">
       <ExpenseList/>
 
       </div>
