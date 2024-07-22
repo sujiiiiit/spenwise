@@ -12,6 +12,10 @@ import { IncomeChart, ExpenseChart } from "@/components/mainLayout/Charts/pieCha
 import DrawerComponent from "@/components/mainLayout/Form/adddrawer";
 import EditDrawer from "@/components/mainLayout/Form/editDrawer";
 import { categoriesWithColors } from "@/lib/types";
+import { ToastAction } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/use-toast";
+
+
 
 const groupByDate = (expenses: Expense[]): GroupedExpenses[] => {
   const grouped = expenses.reduce(
@@ -64,6 +68,7 @@ const ExpensesList: React.FC = () => {
   });
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const { toast } = useToast();
 
   const userId = import.meta.env.VITE_USER_ID;
 
@@ -74,8 +79,21 @@ const ExpensesList: React.FC = () => {
   expenses;
 
   const handleDelete = async (id: string) => {
-    await deleteExpense(id);
-    fetchAllExpenses();
+    try {
+      await deleteExpense(id);
+      toast({
+        title: "Record Deleted",
+        description: "",
+        action: <ToastAction altText="Close">Close</ToastAction>,
+      });
+      fetchAllExpenses();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `${error|| "Failed to delete expense"}`,
+        action: <ToastAction altText="Close">Close</ToastAction>,
+      });
+    }
   };
 
   const handleEditExpense = (expense: Expense) => {
