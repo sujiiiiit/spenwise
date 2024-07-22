@@ -71,3 +71,31 @@ export const addExpense = async (expenseData: {
   }
 };
 
+export const editExpense = async (id: string, expenseData: {
+  userId: string;
+  dateTime: string;
+  amount: number;
+  type: string;
+  category: string;
+  title: string;
+  currency: string;
+  note?: string;
+}): Promise<Expense> => {
+  try {
+    const response = await axios.put<Expense>(`${API_URL}/edit/${id}`, expenseData);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Edit expense error:",
+        error.response?.data || error.message
+      );
+    } else {
+      console.error("Edit expense error:", error);
+    }
+    throw new Error("Failed to edit expense. Please try again.");
+  }
+};
+
+
+

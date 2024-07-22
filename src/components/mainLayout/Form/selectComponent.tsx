@@ -18,7 +18,7 @@ interface SelectProps {
   ref?: React.RefObject<HTMLSelectElement>;
 }
 
-export function SelectComponent({ type, value, onChange,className,ref }: SelectProps) {
+export function SelectComponent({ type, value, onChange,className }: SelectProps) {
   const renderOptions = () => {
     switch (type) {
       case 'type':

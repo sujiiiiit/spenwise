@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -6,89 +6,131 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
-  DrawerClose, // Import the close button component
+  DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DatePicker from "@/components/mainLayout/Form/datePicker";
 import { SelectComponent } from "@/components/mainLayout/Form/selectComponent";
-import { addExpense } from "@/lib/service"; // Adjust import path as needed
+import { editExpense } from "@/lib/service";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
+import { Expense } from "@/lib/types";
 
-export default function DrawerComponent() {
-  const [isOpen, setIsOpen] = useState(false); // State for managing drawer visibility
-  const [userId, setUserId] = useState("");
+// Helper function to format date as YYYY-MM-DD HH:MM:SS
+const formatDateTime = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
+interface EditDrawerProps {
+  expenseData: Expense | null;
+  openClose: boolean;
+  userId: string; // Add userId prop
+  onClose: () => void;
+  onExpenseEdited?: () => void; // Add onExpenseEdited prop
+}
+
+const EditDrawer: React.FC<EditDrawerProps> = ({
+  expenseData,
+  userId,
+  openClose,
+  onClose,
+  onExpenseEdited,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [title, setTitle] = useState("");
   const [dateTime, setDateTime] = useState<Date | undefined>(undefined);
   const [amount, setAmount] = useState<number | "">("");
   const [type, setType] = useState("");
   const [category, setCategory] = useState("");
-  const [title, setTitle] = useState("");
   const [currency, setCurrency] = useState("");
   const [note, setNote] = useState("");
   const { toast } = useToast();
+  if (isOpen !== openClose) setIsOpen(openClose);
 
-  if (userId === "") {
-    setUserId(import.meta.env.VITE_USER_ID);
-  }
+  useEffect(() => {
+    if (expenseData) {
+      setIsOpen(true);
+      setTitle(expenseData.title);
+      setDateTime(new Date(expenseData.dateTime));
+      setAmount(expenseData.amount);
+      setType(expenseData.type);
+      setCategory(expenseData.category);
+      setCurrency(expenseData.currency);
+      setNote(expenseData.note);
+    }
+  }, [expenseData]);
 
   const handleSubmit = async () => {
-    // Validation
     let validationErrors: string[] = [];
-  
+
     if (!title) validationErrors.push("Title");
     if (!dateTime) validationErrors.push("Date");
-    if (!amount) validationErrors.push("Amount");
+    if (amount === "") validationErrors.push("Amount");
     if (!type) validationErrors.push("Type");
     if (!category) validationErrors.push("Category");
     if (!currency) validationErrors.push("Currency");
-  
+
     if (validationErrors.length > 0) {
       toast({
         title: "Validation Error",
-        description: `The following fields are required: ${validationErrors.join(", ")}`,
+        description: `The following fields are required: ${validationErrors.join(
+          ", "
+        )}`,
         action: <ToastAction altText="Close">Close</ToastAction>,
       });
       return;
     }
-  
+
     try {
-      await addExpense({
-        userId,
-        dateTime: String(dateTime), // Convert date to ISO string
-        amount: Number(amount),
-        type,
-        category,
-        title,
-        currency,
-        note,
-      });
-      toast({
-        title: "Success!",
-        description: "Expense added successfully.",
-        action: <ToastAction altText="Close">Close</ToastAction>,
-      });
-      setIsOpen(false); // Close the drawer after successful submission
+      if (expenseData) {
+        await editExpense(expenseData._id, {
+          userId,
+          title,
+          dateTime: dateTime ? formatDateTime(dateTime) : "",
+          amount: amount || 0, // Use 0 if amount is empty
+          type,
+          category,
+          currency,
+          note,
+        });
+        toast({
+          title: "Success!",
+          description: "Expense updated successfully.",
+          action: <ToastAction altText="Close">Close</ToastAction>,
+        });
+        setIsOpen(false);
+        if (onExpenseEdited) {
+          onExpenseEdited();
+        }
+        onClose();
+      }
     } catch (error) {
-      console.error("Error adding expense:", error);
+      console.error("Error updating expense:", error);
       toast({
         title: "Error",
-        description: "Failed to add expense. Please try again.",
+        description: "Failed to update expense. Please try again.",
         action: <ToastAction altText="Close">Close</ToastAction>,
       });
     }
   };
-  
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger onClick={() => setIsOpen(true)}>Open</DrawerTrigger>
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="h-fit">
         <DrawerHeader className="m-auto text-center">
-          <DrawerTitle className="text-center">Add Expenses</DrawerTitle>
-          <DrawerDescription>Fill out the form and submit</DrawerDescription>
+          <DrawerTitle className="text-center">Edit Expense</DrawerTitle>
+          <DrawerDescription>
+            Update the expense details below
+          </DrawerDescription>
         </DrawerHeader>
         <DrawerClose onClick={() => setIsOpen(false)} /> {/* Close button */}
         <div className="form flex flex-col gap-2 w-full max-w-96 m-auto xs:px-4">
@@ -105,8 +147,10 @@ export default function DrawerComponent() {
             <Input
               placeholder="Amount"
               type="number"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              value={amount === "" ? "" : amount} // Handle empty string case
+              onChange={(e) =>
+                setAmount(e.target.value ? Number(e.target.value) : "")
+              }
             />
             <SelectComponent
               type="currency"
@@ -132,4 +176,6 @@ export default function DrawerComponent() {
       </DrawerContent>
     </Drawer>
   );
-}
+};
+
+export default EditDrawer;

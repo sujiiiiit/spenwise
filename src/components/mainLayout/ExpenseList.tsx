@@ -1,5 +1,4 @@
-"use client";
-
+// ExpensesList.tsx
 import React, { useEffect, useState, useCallback } from "react";
 import { fetchExpenses, deleteExpense } from "@/lib/service";
 import { Expense, GroupedExpenses } from "@/lib/types";
@@ -7,13 +6,17 @@ import { getDayAndDate } from "@/lib/functions";
 import ExpenseHeader from "./ExpenseHeader";
 import ExpenseFilter from "./ExpenseFilter";
 import ExpenseItem from "./ExpenseItem";
-import { PieCharts } from "./Charts/pieChart"; // Import the PieCharts component
-import DrawerComponent from "@/components/mainLayout/Form/drawer";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { IncomeChart, ExpenseChart } from "@/components/mainLayout/Charts/pieChart";
+// import { PieCharts } from "./Charts/pieChart";
+import DrawerComponent from "@/components/mainLayout/Form/adddrawer";
+import EditDrawer from "@/components/mainLayout/Form/editDrawer";
+import { categoriesWithColors } from "@/lib/types";
 
 const groupByDate = (expenses: Expense[]): GroupedExpenses[] => {
   const grouped = expenses.reduce(
     (acc: { [key: string]: Expense[] }, expense) => {
-      const date = expense.dateTime.split(" ")[0]; // Extract date in YYYY-MM-DD format
+      const date = expense.dateTime.split(" ")[0];
       if (!acc[date]) {
         acc[date] = [];
       }
@@ -43,16 +46,6 @@ const calculateTotals = (expenses: Expense[]) => {
   );
 };
 
-// Function to generate a random color
-const getRandomColor = () => {
-  const letters = "0123456789ABCDEF";
-  let color = "#";
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-};
-
 const ExpensesList: React.FC = () => {
   const [groupedExpenses, setGroupedExpenses] = useState<GroupedExpenses[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -69,13 +62,39 @@ const ExpensesList: React.FC = () => {
     category: "",
     currency: "",
   });
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+
+  const userId = import.meta.env.VITE_USER_ID;
+
+  const fetchAllExpenses = async () => {
+    const data = await fetchExpenses(userId);
+    setExpenses(data);
+  };
+  expenses;
+
+  const handleDelete = async (id: string) => {
+    await deleteExpense(id);
+    fetchAllExpenses();
+  };
+
+  const handleEditExpense = (expense: Expense) => {
+    setSelectedExpense(expense);
+    fetchAllExpenses();
+    setIsEditDrawerOpen(true);
+  };
+
+  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+
+  const handleCloseDrawer = () => {
+    setSelectedExpense(null);
+    setIsEditDrawerOpen(false); // Close the drawer
+  };
 
   const fetchAndGroupExpenses = useCallback(
     async (month: string, year: string) => {
       setLoading(true);
       try {
-        // const userId = "si2nfh";
-        const userId = import.meta.env.VITE_USER_ID; 
         const data = await fetchExpenses(userId, month, year);
         const grouped = groupByDate(data);
         setGroupedExpenses(grouped);
@@ -85,7 +104,7 @@ const ExpensesList: React.FC = () => {
         setLoading(false);
       }
     },
-    []
+    [userId]
   );
 
   useEffect(() => {
@@ -123,16 +142,6 @@ const ExpensesList: React.FC = () => {
       ...prevFilters,
       [name]: value,
     }));
-  };
-
-  const handleDeleteExpense = async (id: string) => {
-    try {
-      await deleteExpense(id);
-      // Refresh expenses after deletion
-      fetchAndGroupExpenses(currentMonth, currentYear);
-    } catch (error) {
-      console.error("Error deleting expense:", error);
-    }
   };
 
   const filteredGroupedExpenses = groupedExpenses
@@ -177,7 +186,8 @@ const ExpensesList: React.FC = () => {
     return Object.entries(data).map(([category, amount]) => ({
       category,
       amount,
-      fill: getRandomColor(), // Set a random color for each category
+      fill:
+        categoriesWithColors.find((c) => c.category === category)?.fill || "",
       percent: total > 0 ? amount / total : 0,
     }));
   };
@@ -185,7 +195,6 @@ const ExpensesList: React.FC = () => {
   const incomePieData = transformToPieChartData(incomeByCategory);
   const expensePieData = transformToPieChartData(expenseByCategory);
 
-  // Calculate total monthly income and expense
   const totalMonthlyIncome = incomeExpenses.reduce(
     (sum, expense) => sum + expense.amount,
     0
@@ -205,13 +214,34 @@ const ExpensesList: React.FC = () => {
             onPrevious={handlePreviousMonth}
             onNext={handleNextMonth}
           />
-          <PieCharts
-            incomeData={incomePieData}
-            expenseData={expensePieData}
-            totalincome={totalMonthlyIncome.toFixed(2)}
-            totalexpense={totalMonthlyExpense.toFixed(2)}
+          <Tabs defaultValue="income" className="w-full">
+            <TabsList className="w-full">
+              <TabsTrigger className="w-full" value="income">
+                Income
+              </TabsTrigger>
+              <TabsTrigger className="w-full" value="expense">
+                Expense
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="income">
+              <IncomeChart
+                incomeData={incomePieData}
+                totalincome={totalMonthlyIncome.toFixed(2)}
+              />
+            </TabsContent>
+            <TabsContent value="expense">
+              <ExpenseChart
+                expenseData={expensePieData}
+                totalexpense={totalMonthlyExpense.toFixed(2)}
+              />
+            </TabsContent>
+          </Tabs>
+
+          <DrawerComponent
+            onExpenseAdded={() =>
+              fetchAndGroupExpenses(currentMonth, currentYear)
+            }
           />
-          <DrawerComponent />
 
           <ExpenseFilter
             filters={filters}
@@ -250,7 +280,8 @@ const ExpensesList: React.FC = () => {
                           <ExpenseItem
                             key={expense._id}
                             expense={expense}
-                            onDelete={handleDeleteExpense} // Pass the handler here
+                            onDelete={handleDelete}
+                            onEdit={handleEditExpense}
                           />
                         ))}
                       </div>
@@ -258,6 +289,16 @@ const ExpensesList: React.FC = () => {
                   );
                 })}
           </div>
+
+          <EditDrawer
+            userId={userId}
+            onExpenseEdited={() =>
+              fetchAndGroupExpenses(currentMonth, currentYear)
+            }
+            openClose={isEditDrawerOpen}
+            expenseData={selectedExpense}
+            onClose={handleCloseDrawer}
+          />
         </div>
       </div>
     </>

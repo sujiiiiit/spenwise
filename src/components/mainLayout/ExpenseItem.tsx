@@ -5,17 +5,26 @@ import { Alert } from "./AlertDialog"; // Updated import path
 
 interface ExpenseItemProps {
   expense: Expense;
-  onDelete: (id: string) => void; // Callback function to handle deletion
+  onDelete: (id: string) => void;
+  onEdit: (expense: Expense) => void;
 }
 
-const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onDelete }) => {
+const ExpenseItem: React.FC<ExpenseItemProps> = ({
+  expense,
+  onDelete,
+  onEdit,
+}) => {
   const handleDelete = async () => {
     await onDelete(expense._id);
   };
+  
 
   return (
     <div className="flex px-4 gap-2 py-2 cursor-pointer">
-      <div className="w-full grid grid-cols-5 gap-2">
+      <div
+        className="w-full grid grid-cols-5 gap-2"
+        onClick={() => onEdit(expense)}
+      >
         <div className="categoryLabel col-span-1 flex justify-start items-center">
           <span className="rounded-sm w-full overflow-hidden text-ellipsis clamp-1">
             {expense.category}
@@ -26,7 +35,9 @@ const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onDelete }) => {
         </div>
         <div
           className={`col-span-1 flex justify-end items-center ${
-            expense.type === "Income" ? "income text-[var(--green)]" : "expense text-[var(--red)]"
+            expense.type === "Income"
+              ? "income text-[var(--green)]"
+              : "expense text-[var(--red)]"
           }`}
         >
           {expense.type === "Income" ? "+" : "-"}
