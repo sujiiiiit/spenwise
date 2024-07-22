@@ -1,5 +1,7 @@
 import Header from "@/components/Header/Header";
 import ExpenseList from "@/components/mainLayout/ExpenseList";
+import { Toaster } from "@/components/ui/toaster"
+
 function App() {
   return (
     <>
@@ -8,6 +10,7 @@ function App() {
       <ExpenseList/>
 
       </div>
+      <Toaster />
 
     </>
   );

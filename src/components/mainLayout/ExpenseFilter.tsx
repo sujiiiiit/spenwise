@@ -1,9 +1,7 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const categories = ["Healthcare", "Shopping", "Travel", "Investment", "Entertainment", "Food", "Education", "Transportation", "Rent", "Utilities", "Bonus", "Freelance", "Gift", "Salary"];
-const currencies = ["EUR", "JPY", "USD", "INR", "GBP"];
+import { currencies,categories } from "@/lib/types";
 
 interface FilterProps {
   filters: {

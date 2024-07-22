@@ -44,3 +44,30 @@ export const deleteExpense = async (id: string) => {
     throw new Error("Failed to delete expense. Please try again.");
   }
 };
+
+export const addExpense = async (expenseData: {
+  userId: string;
+  dateTime: string;
+  amount: number;
+  type: string;
+  category: string;
+  title: string;
+  currency: string;
+  note?: string;
+}) => {
+  try {
+    const response = await axios.post(`${API_URL}/add`, expenseData);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Add expense error:",
+        error.response?.data || error.message
+      );
+    } else {
+      console.error("Add expense error:", error);
+    }
+    throw new Error("Failed to add expense. Please try again.");
+  }
+};
+
